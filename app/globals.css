@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Battambang&family=Noto+Sans+Khmer&display=swap');
+
+
+@import "tailwindcss";
+
+@layer base {
+    html, body {
+      @apply font-sans; /* you can keep default Tailwind font */
+      font-family: 'Battambang', sans-serif; /* force global font */
+    }
+  
+    button, input, select, textarea {
+      font-family: 'Battambang', sans-serif; /* ensure form elements inherit font */
+    }
+  }
