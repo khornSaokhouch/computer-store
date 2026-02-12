@@ -6,9 +6,8 @@ import { useCheckMd5Store } from "../../store/checkMd5Store";
 
 export default function PaymentModal({ qrData, selectedAccount, onClose, onSuccess, onRetry, total }) {
   const cardRef = useRef(null);
-  const { startPolling, isPaid, resetStatus } = useCheckMd5Store();
-  
-  // --- STATE: EXPIRATION ---
+  const { startPolling, isPaid, resetStatus, pollIntervalId } = useCheckMd5Store();
+
   const [timeLeft, setTimeLeft] = useState(120); 
   const [isExpired, setIsExpired] = useState(false);
 
@@ -16,18 +15,21 @@ export default function PaymentModal({ qrData, selectedAccount, onClose, onSucce
     resetStatus();
     setTimeLeft(120);
     setIsExpired(false);
-    
-    // Start polling
-    const cleanup = startPolling(qrData.md5, () => {
+
+    // --- START POLLING ---
+    startPolling(qrData.md5, () => {
       setTimeout(() => onSuccess(), 1500);
     });
 
-    // --- TIMER LOGIC ---
+    // --- TIMER ---
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
+      setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timer);
           setIsExpired(true);
+
+          // Stop polling when expired
+          if (pollIntervalId) clearInterval(pollIntervalId);
           return 0;
         }
         return prev - 1;
@@ -35,19 +37,20 @@ export default function PaymentModal({ qrData, selectedAccount, onClose, onSucce
     }, 1000);
 
     return () => {
-      cleanup();
+      resetStatus();
       clearInterval(timer);
     };
-  }, [qrData.md5, startPolling, resetStatus, onSuccess]);
+  }, [qrData.md5, startPolling, resetStatus, onSuccess, pollIntervalId]);
 
+  // --- DOWNLOAD QR ---
   const handleDownload = async () => {
-    if (cardRef.current === null) return;
+    if (!cardRef.current) return;
     try {
       const dataUrl = await toPng(cardRef.current, { 
         cacheBust: true, 
         pixelRatio: 3, 
         backgroundColor: "#ffffff",
-        filter: (node) => node.tagName !== 'BUTTON', 
+        filter: node => node.tagName !== "BUTTON",
       });
       const link = document.createElement("a");
       link.download = `KHQR_Payment_${total}.png`;
@@ -56,20 +59,21 @@ export default function PaymentModal({ qrData, selectedAccount, onClose, onSucce
     } catch (err) { console.error(err); }
   };
 
+  // --- SHARE QR ---
   const handleShare = async () => {
-    if (cardRef.current === null) return;
+    if (!cardRef.current) return;
     try {
       const dataUrl = await toPng(cardRef.current, { 
         cacheBust: true, 
-        pixelRatio: 3,
+        pixelRatio: 3, 
         backgroundColor: "#ffffff",
-        filter: (node) => node.tagName !== 'BUTTON',
+        filter: node => node.tagName !== "BUTTON",
       });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], "KHQR_Payment.png", { type: "image/png" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: "KHQR Payment" });
-      } else { handleDownload(); }
+      } else handleDownload();
     } catch (err) { console.error(err); }
   };
 
@@ -124,7 +128,6 @@ export default function PaymentModal({ qrData, selectedAccount, onClose, onSucce
                   <p className="text-[12px] font-bold text-[#7b869d] uppercase tracking-[0.1em] mb-2 truncate">
                     {selectedAccount?.userName || "MERCHANT"}
                   </p>
-                  {/* TIMER BADGE (MM:SS) */}
                   <span className="text-[10px] font-black bg-slate-100 px-2 py-1 rounded text-slate-500">
                     {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                   </span>

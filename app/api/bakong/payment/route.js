@@ -1,11 +1,11 @@
 import { connectDB } from "../../../lib/mongodb";
 import Order from "../../../models/Order";
-import PaymentAccount from "../../../models/PaymentAccount"; // Your model
+import PaymentAccount from "../../../models/PaymentAccount";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import BakongKHQR from "../../../../lib/BakongKHQR";
 
-
+export const runtime = "nodejs";
 
 export async function POST(req) {
   try {
@@ -17,11 +17,13 @@ export async function POST(req) {
     let amount = 0;
     let targetAccountId = null;
 
-    // 1. Determine Source (Order or Raw)
+    // 1️⃣ Determine amount & account
     if (orderId) {
       const order = await Order.findById(orderId).lean();
-      if (!order) return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
-      
+      if (!order) {
+        return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
+      }
+
       amount = order.total || order.totalPrice;
       targetAccountId = order.paymentAccountId || order.paymentAccount;
     } else {
@@ -29,49 +31,45 @@ export async function POST(req) {
       targetAccountId = rawAccountId;
     }
 
-    if (!amount) 
+    if (!amount) {
       return NextResponse.json({ success: false, message: "Amount missing" }, { status: 400 });
-    if (!targetAccountId)
+    }
+    if (!targetAccountId) {
       return NextResponse.json({ success: false, message: "Payment account missing" }, { status: 400 });
-
-    // 2. Find the selected Payment Account from DB
-    const account = await PaymentAccount.findById(targetAccountId).lean();
-    if (!account) {
-       return NextResponse.json({ success: false, message: "Linked payment account not found" }, { status: 404 });
     }
 
-    // 3. Setup Payload from Account
-    const accountId = account.accountId;
-    const merchantName = account.userName;
-    const merchantCity = account.city;
-    const currency = account.currency || "KHR"; 
+    // 2️⃣ Load payment account
+    const account = await PaymentAccount.findById(targetAccountId).lean();
+    if (!account) {
+      return NextResponse.json({ success: false, message: "Payment account not found" }, { status: 404 });
+    }
 
-    // 4. Generate the QR Payload
+    // 3️⃣ Generate STATIC Bakong QR
     const qrPayload = BakongKHQR.generateIndividualStatic({
-      bakongAccountID: accountId,
-      merchantName: merchantName,
-      merchantCity: merchantCity,
-      amount: parseFloat(amount), 
-      currency: currency.toUpperCase(),
-      billNumber: orderId ? orderId.toString() : ("TEMP" + Date.now())
+      bakongAccountID: account.accountId,
+      merchantName: account.userName,
+      merchantCity: account.city,
+      amount: parseFloat(amount),
+      currency: (account.currency || "KHR").toUpperCase(),
+      billNumber: orderId ? orderId.toString() : `TEMP-${Date.now()}`,
     });
 
-    // 5. Generate MD5 from the Payload
+    // 4️⃣ Generate MD5
     const md5 = crypto.createHash("md5").update(qrPayload).digest("hex");
 
-    // 6. Generate QR Image URL
+    // 5️⃣ QR image
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrPayload)}`;
 
-    // 7. Save MD5 back to the Order (ONLY IF orderId exists)
+    // 6️⃣ Save to order
     if (orderId) {
       await Order.updateOne(
         { _id: orderId },
-        { 
+        {
           $set: {
             paymentMethod: "Bakong",
             paymentStatus: "pending",
-            md5: md5 
-          }
+            md5,
+          },
         }
       );
     }
@@ -79,8 +77,8 @@ export async function POST(req) {
     return NextResponse.json({
       success: true,
       qrCode: qrUrl,
-      paymentUrl: `bakong://pay?data=${qrPayload}`, 
-      md5
+      paymentUrl: `bakong://pay?data=${qrPayload}`,
+      md5,
     });
 
   } catch (err) {

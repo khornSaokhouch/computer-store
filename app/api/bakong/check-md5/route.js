@@ -1,47 +1,63 @@
-// app/api/bakong/check-md5/route.js
+import { connectDB } from "../../../lib/mongodb";
+import Order from "../../../models/Order";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
 export async function POST(req) {
   try {
+    await connectDB();
+
     const { md5 } = await req.json();
+
     if (!md5) {
-      return NextResponse.json({ success: false, message: "MD5 required" }, { status: 400 });
-    }
-
-    const response = await fetch(
-      `${process.env.BAKONG_API_URL}/v1/check_transaction_by_md5`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.BAKONG_CLIENT_SECRET,
-        },
-        body: JSON.stringify({ md5 }),
-      }
-    );
-
-    const text = await response.text();
-
-    if (!response.ok) {
-      console.error("Bakong error:", response.status, text);
       return NextResponse.json(
-        { success: false, message: "Bakong API error", detail: text },
-        { status: 502 }
+        { success: false, message: "MD5 required" },
+        { status: 400 }
       );
     }
 
-    const data = JSON.parse(text);
+    // 1️⃣ Find order by MD5
+    const order = await Order.findOne({ md5 });
 
+    if (!order) {
+      return NextResponse.json({
+        success: false,
+        message: "Transaction not found",
+        data: null,
+      });
+    }
+
+    // 2️⃣ Simulate pending payment logic
+    if (order.paymentStatus === "pending") {
+      const shouldPay = Math.random() > 0.7; // 30% chance to mark paid per poll
+
+      if (!shouldPay) {
+        return NextResponse.json({
+          success: false,
+          message: "Waiting for payment",
+          data: { orderId: order._id, status: "pending" },
+        });
+      }
+
+      // Mark order as paid
+      order.paymentStatus = "paid";
+      order.paidAt = new Date();
+      await order.save();
+    }
+
+    // 3️⃣ Return success
     return NextResponse.json({
-      success: data.responseCode === 0,
-      message: data.responseMessage,
-      data: data.data ?? null,
+      success: true,
+      message: "Payment success",
+      data: {
+        orderId: order._id,
+        amount: order.total || order.totalPrice,
+        status: order.paymentStatus,
+      },
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("Check MD5 Error:", err);
     return NextResponse.json(
       { success: false, message: "Server error", detail: err.message },
       { status: 500 }
