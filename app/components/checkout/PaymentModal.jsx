@@ -11,36 +11,44 @@ export default function PaymentModal({ qrData, selectedAccount, onClose, onSucce
   const [timeLeft, setTimeLeft] = useState(120); 
   const [isExpired, setIsExpired] = useState(false);
 
-  useEffect(() => {
-    resetStatus();
-    setTimeLeft(120);
-    setIsExpired(false);
+useEffect(() => {
+  setTimeLeft(120);
+  setIsExpired(false);
 
-    // --- START POLLING ---
-    startPolling(qrData.md5, () => {
-      setTimeout(() => onSuccess(), 1500);
+  // --- START POLLING ---
+  startPolling(qrData.md5, () => {
+    setTimeout(() => onSuccess(), 1500);
+  });
+
+  // --- TIMER ---
+  const timer = setInterval(() => {
+    setTimeLeft(prev => {
+      if (prev <= 1) {
+        clearInterval(timer);
+        setIsExpired(true);
+
+        // Stop polling safely
+        const { pollIntervalId } = useCheckMd5Store.getState();
+        if (pollIntervalId) clearInterval(pollIntervalId);
+
+        return 0;
+      }
+      return prev - 1;
     });
+  }, 1000);
 
-    // --- TIMER ---
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setIsExpired(true);
+  return () => {
+    // Only cleanup intervals on unmount
+    const { pollIntervalId } = useCheckMd5Store.getState();
+    if (pollIntervalId) clearInterval(pollIntervalId);
 
-          // Stop polling when expired
-          if (pollIntervalId) clearInterval(pollIntervalId);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    clearInterval(timer);
 
-    return () => {
-      resetStatus();
-      clearInterval(timer);
-    };
-  }, [qrData.md5, startPolling, resetStatus, onSuccess, pollIntervalId]);
+    // resetStatus is safe here
+    useCheckMd5Store.getState().resetStatus();
+  };
+}, [qrData.md5, startPolling, onSuccess]);
+
 
   // --- DOWNLOAD QR ---
   const handleDownload = async () => {
