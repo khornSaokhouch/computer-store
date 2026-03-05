@@ -15,19 +15,16 @@ useEffect(() => {
   setTimeLeft(120);
   setIsExpired(false);
 
-  // --- START POLLING ---
-  startPolling(qrData.md5, () => {
+  const cleanupPolling = startPolling(qrData.md5, () => {
     setTimeout(() => onSuccess(), 1500);
   });
 
-  // --- TIMER ---
   const timer = setInterval(() => {
     setTimeLeft(prev => {
       if (prev <= 1) {
         clearInterval(timer);
         setIsExpired(true);
 
-        // Stop polling safely
         const { pollIntervalId } = useCheckMd5Store.getState();
         if (pollIntervalId) clearInterval(pollIntervalId);
 
@@ -38,14 +35,11 @@ useEffect(() => {
   }, 1000);
 
   return () => {
-    // Only cleanup intervals on unmount
+    clearInterval(timer);
     const { pollIntervalId } = useCheckMd5Store.getState();
     if (pollIntervalId) clearInterval(pollIntervalId);
 
-    clearInterval(timer);
-
-    // resetStatus is safe here
-    useCheckMd5Store.getState().resetStatus();
+    useCheckMd5Store.getState().resetStatus(); // safe on unmount
   };
 }, [qrData.md5, startPolling, onSuccess]);
 

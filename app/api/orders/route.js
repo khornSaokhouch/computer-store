@@ -54,7 +54,14 @@ export async function GET(req) {
     }
 
     const orders = await Order.find(query)
-      .populate("items.product", "name price images")
+      .populate({
+        path: "items.product",
+        select: "name price images store_id",
+        populate: {
+          path: "store_id",
+          select: "name"
+        }
+      })
       .populate("user", "name email")
       .populate("paymentAccount")
       .sort({ createdAt: -1 });

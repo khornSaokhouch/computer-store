@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../store/authStore";
 import Navbar from "../components/owner/Navbar";
@@ -7,6 +7,7 @@ import Sidebar from "../components/owner/Sidebar";
 
 export default function AdminLayout({ children }) {
   const { user, rehydrated } = useAuthStore();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -18,16 +19,24 @@ export default function AdminLayout({ children }) {
   }, [user, rehydrated, router]);
 
   if (!rehydrated || !user || user.role !== "owner") {
-    return null; // Or a loading spinner
+    return (
+      <div className="flex h-screen items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar />
-      <div className="flex flex-col flex-1 min-w-0">
-        <Navbar />
-        <main className="flex-1 overflow-y-auto p-6 lg:p-10">
-          <div className="max-w-7xl mx-auto">
+    <div className="flex h-screen font-sans">
+      {/* Sidebar - Desktop & Mobile Overlay */}
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        {/* Navbar - Passes toggle function */}
+        <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
+
+        <main className="flex-1 overflow-y-auto bg-gray-50/50">
+          <div className="max-w-7xl mx-auto p-4 md:p-8 lg:p-10">
             {children}
           </div>
         </main>

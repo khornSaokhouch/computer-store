@@ -100,127 +100,90 @@ useEffect(() => {
   };
 
   return (
-    <section className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-      <div className="px-10 py-5 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
-        <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-          <Plus size={14} className="text-indigo-600" />
-          {editingId ? "Edit Product" : "New Product"}
+    <section className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
+      <div className="px-8 py-5 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+        <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+          <Plus size={16} className="text-indigo-600" />
+          {editingId ? "Edit Product Details" : "Create New Asset"}
         </h2>
         {editingId && (
-          <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
-            <X size={20} />
+          <button onClick={resetForm} className="text-[10px] font-black uppercase text-rose-500 bg-rose-50 px-3 py-1 rounded-lg hover:bg-rose-100">
+            Cancel Edit
           </button>
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="p-10 space-y-8">
-        {/* Name, Price, Category */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Input label="Product Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
-
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Price</label>
+      <form onSubmit={handleSubmit} className="p-8 lg:p-10 space-y-10">
+        {/* SECTION 1: BASIC INFO */}
+        <div className="space-y-6">
+          <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">01. Basic Information</p>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="md:col-span-2">
+              <Input label="Product Name" placeholder="e.g. MacBook Pro M3" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
+            </div>
             <div className="relative">
-              <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-              <input
-                type="number"
-                value={form.price}
-                onChange={(e) => setForm({ ...form, price: e.target.value })}
-                className="w-full pl-12 pr-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl outline-none text-sm font-bold"
-              />
+               <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide ml-1 mb-2 block">Price ($)</label>
+               <input 
+                  type="number" 
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
+               />
             </div>
+            <Input label="Inventory Stock" type="number" value={form.stock} onChange={(v) => setForm({ ...form, stock: v })} />
           </div>
-
-          <Select
-            label="Category"
-            value={form.category}
-            options={categories}
-            displayKey="category_name"
-            onChange={(v) => setForm({ ...form, category: v, type: "" })}
-          />
         </div>
 
-        {/* Type, Brand, Store */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Select
-            label="Type"
-            value={form.type}
-            options={filteredTypeOptions}
-            displayKey="type_name"
-            disabled={!form.category}
-            placeholder={form.category ? "Select Type" : "Select category first"}
-            onChange={(v) => setForm({ ...form, type: v })}
-          />
-
-          <Select
-            label="Brand"
-            value={form.brand}
-            options={brands}
-            displayKey="name"
-            onChange={(v) => setForm({ ...form, brand: v })}
-          />
-
-          <Select
-            label="Store"
-            value={form.store_id}
-            options={stores}
-            displayKey="name"
-            onChange={(v) => setForm({ ...form, store_id: v })}
-            placeholder="Select Store"
-          />
-
-          <Select
-            label="Payment Account"
-            value={form.paymentAccount}
-            options={paymentAccounts}
-            displayKey="userName" // or accountId, user usually recognizes name
-            onChange={(v) => setForm({ ...form, paymentAccount: v })}
-            placeholder="Select Payment Account"
-          />
+        {/* SECTION 2: LOGISTICS & CATEGORY */}
+        <div className="space-y-6 pt-6 border-t border-slate-50">
+          <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">02. Logistics & Classification</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Select label="Category" value={form.category} options={categories} displayKey="category_name" onChange={(v) => setForm({ ...form, category: v, type: "" })} />
+            <Select label="Type" value={form.type} options={filteredTypeOptions} displayKey="type_name" disabled={!form.category} onChange={(v) => setForm({ ...form, type: v })} />
+            <Select label="Brand" value={form.brand} options={brands} displayKey="name" onChange={(v) => setForm({ ...form, brand: v })} />
+            <Select label="Warranty Plan" value={form.warranty} options={warranties} displayKey="warranty_name" onChange={(v) => setForm({ ...form, warranty: v })} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Select label="Assign to Store" value={form.store_id} options={stores} displayKey="name" onChange={(v) => setForm({ ...form, store_id: v })} />
+            <Select label="Settlement Account" value={form.paymentAccount} options={paymentAccounts} displayKey="userName" onChange={(v) => setForm({ ...form, paymentAccount: v })} />
+          </div>
         </div>
 
-        {/* Stock & Warranty + Description + Images */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              <Input label="Stock" type="number" value={form.stock} onChange={(v) => setForm({ ...form, stock: v })} />
-
-              <Select
-                label="Warranty"
-                value={form.warranty}
-                options={warranties}
-                displayKey="warranty_name"
-                onChange={(v) => setForm({ ...form, warranty: v })}
-                placeholder="Select Warranty"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Description</label>
-              <textarea
+        {/* SECTION 3: CONTENT & ASSETS */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 pt-6 border-t border-slate-50">
+          <div className="space-y-4">
+             <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">03. Product Content</p>
+             <textarea
+                placeholder="Describe the product features..."
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl min-h-[120px] resize-none text-sm font-bold"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl min-h-[180px] resize-none text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
               />
-            </div>
           </div>
-
-          <ImageUpload
-            imagePreviews={imagePreviews}
-            setImagePreviews={setImagePreviews}
-            setImagesBase64={setImagesBase64}
-            existingImages={form.existingImages}
-            setExistingImages={(imgs) => setForm({ ...form, existingImages: imgs })}
-          />
+          <div className="space-y-4">
+             <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">04. Visual Assets</p>
+             <ImageUpload
+                imagePreviews={imagePreviews}
+                setImagePreviews={setImagePreviews}
+                setImagesBase64={setImagesBase64}
+                existingImages={form.existingImages}
+                setExistingImages={(imgs) => setForm({ ...form, existingImages: imgs })}
+              />
+          </div>
         </div>
 
-        <div className="flex justify-end pt-6 border-t border-gray-50">
+        <div className="flex justify-end pt-8 border-t border-slate-100">
           <button
             type="submit"
             disabled={loading}
-            className="px-10 py-4 bg-indigo-600 text-white font-black rounded-2xl text-xs tracking-widest uppercase disabled:bg-gray-200 transition-all flex items-center gap-3"
+            className="group px-12 py-4 bg-indigo-600 text-white font-bold rounded-2xl text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-3 disabled:bg-slate-200"
           >
-            {loading ? <Loader2 className="animate-spin" size={18} /> : editingId ? "Update Product" : "Publish Product"}
+            {loading ? <Loader2 className="animate-spin" size={20} /> : (
+              <>
+                {editingId ? "Update Product" : "Publish to Catalog"}
+                <Plus size={18} className="group-hover:rotate-90 transition-transform" />
+              </>
+            )}
           </button>
         </div>
       </form>
@@ -228,15 +191,16 @@ useEffect(() => {
   );
 }
 
-// ------------------ Helper Components ------------------
-const Input = ({ label, type = "text", value, onChange }) => (
+// Helper: Refined Input
+const Input = ({ label, type = "text", value, onChange, placeholder }) => (
   <div className="space-y-2">
-    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{label}</label>
+    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wide ml-1">{label}</label>
     <input
       type={type}
+      placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold outline-none"
+      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
     />
   </div>
 );

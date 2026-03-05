@@ -27,149 +27,83 @@ export default function ProductTable({
         .includes(searchTerm.toLowerCase())
   );
 
-  return (
+return (
     <div className="space-y-6">
-      {/* ------------------ Search ------------------ */}
-      <div className="relative w-full md:w-96 group">
-        <Search
-          size={18}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500"
-        />
-        <input
-          type="text"
-          placeholder="Filter inventory..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-12 pr-5 py-4 bg-white border border-gray-100 rounded-10 outline-none shadow-sm text-sm font-bold"
-        />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="relative w-full md:w-96">
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search inventory..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-all"
+          />
+        </div>
       </div>
 
-      {/* ------------------ Table ------------------ */}
-      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left">
             <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  Asset
-                </th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  Category
-                </th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  Store
-                </th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  Payment Account
-                </th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                  Price
-                </th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                  Stock
-                </th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                  Warranty
-                </th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
-                  Actions
-                </th>
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset Details</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Price</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fulfillment</th>
+                <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
-
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-slate-50">
               {filteredProducts.map((p) => (
-                <tr
-                  key={p._id}
-                  className="hover:bg-indigo-50/5 transition-colors group"
-                >
-                  {/* ASSET */}
+                <tr key={p._id} className="group hover:bg-slate-50/30 transition-colors">
                   <td className="px-6 py-5 flex items-center gap-4">
-                    {/* ASSET IMAGE */}
-                    <div className="w-12 h-12 bg-gray-50 rounded-xl overflow-hidden border border-gray-100 flex items-center justify-center">
+                    <div className="w-12 h-12 bg-slate-100 rounded-xl overflow-hidden flex-shrink-0 relative border border-slate-100">
                       {p.images?.length ? (
-                        <Link
-                          href={`/products/${p._id}`}
-                          className="block w-full h-full relative"
-                        >
-                          <Image
-                            src={p.images[0]} // ✅ use the first product image
-                            alt={p.name || "Product Image"}
-                            fill
-                            style={{ objectFit: "cover" }}
-                            className="rounded-xl"
-                            sizes="(max-width: 768px) 50px, 64px" // ✅ tells Next.js the expected width
-                          />
-                        </Link>
+                        <Image src={p.images[0]} alt="" fill className="object-cover" />
                       ) : (
-                        <Package size={20} className="text-gray-200" />
+                        <Package size={20} className="m-auto text-slate-300" />
                       )}
                     </div>
-
                     <div>
-                      <p className="text-sm font-black text-gray-900 leading-none mb-1">
-                        {p.name}
-                      </p>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase">
-                        {brands.find(
-                          (b) => b._id === p.brand?._id || b._id === p.brand
-                        )?.name || "Unknown Brand"}
-                      </p>
+                      <p className="text-sm font-black text-slate-900 leading-tight">{p.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] font-bold text-indigo-500 uppercase">{p.brand?.name || "Brand"}</span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">{p.category?.category_name}</span>
+                      </div>
+                    </div>
+                  </td>
+                  
+                  <td className="px-6 py-5 text-center">
+                    <p className="text-sm font-black text-slate-900">${p.price?.toLocaleString()}</p>
+                  </td>
+
+                  <td className="px-6 py-5 text-center">
+                    <div className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
+                      p.stock > 10 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                    }`}>
+                      {p.stock} Units left
                     </div>
                   </td>
 
-                  {/* CATEGORY */}
                   <td className="px-6 py-5">
-                    <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black uppercase">
-                      {categories.find(
-                        (c) => c.id === (p.category?._id || p.category)
-                      )?.name || "..."}
-                    </span>
+                    <div className="flex items-center gap-2">
+                       <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                       <p className="text-[11px] font-bold text-slate-600 uppercase">{p.store_id?.name || 'Main Warehouse'}</p>
+                    </div>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5 pl-3">ACC: {p.paymentAccount?.userName || 'Default'}</p>
                   </td>
 
-                  {/* STORE */}
-                  <td className="px-6 py-5">
-                    <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black uppercase">
-                      {stores.find(
-                        (s) => s._id === p.store_id?._id || s._id === p.store_id
-                      )?.name || "..."}
-                    </span>
-                  </td>
-
-                  {/* PAYMENT ACCOUNT */}
-                  <td className="px-6 py-5">
-                    <span className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase">
-                      {p.paymentAccount?.userName || "Default"}
-                    </span>
-                  </td>
-
-                  {/* PRICE */}
-                  <td className="px-6 py-5 text-center font-bold text-sm">
-                    ${p.price?.toLocaleString()}
-                  </td>
-
-                  {/* STOCK */}
-                  <td className="px-6 py-5 text-center text-sm">{p.stock}</td>
-
-                  {/* WARRANTY */}
-                  <td className="px-6 py-5 text-center text-sm font-bold">
-                    {p.warranty?.warranty_name || "None"}
-                  </td>
-
-                  {/* ACTIONS */}
-                  <td className="px-6 py-5 text-right flex justify-end gap-2">
-                    <button
-                      onClick={() => onEdit(p)}
-                      className="p-3 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                    >
-                      <Pencil size={18} />
-                    </button>
-                    <button
-                      onClick={() => onDelete(p._id)}
-                      className="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                  <td className="px-6 py-5 text-right">
+                    <div className="flex justify-end items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => onEdit(p)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                        <Pencil size={18} />
+                      </button>
+                      <button onClick={() => onDelete(p._id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

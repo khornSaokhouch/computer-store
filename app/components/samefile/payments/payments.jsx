@@ -9,7 +9,12 @@ import {
   X,
   Loader2,
   AlertCircle,
-  Plus
+  Plus,
+  Building2,
+  Globe,
+  User as UserIcon,
+  ChevronRight,
+  ShieldCheck
 } from "lucide-react";
 import { usePaymentAccountStore } from "../../../store/paymentAccountStore";
 import { useAuthStore } from "../../../store/authStore";
@@ -18,25 +23,13 @@ import { useRouter } from "next/navigation";
 export default function PaymentAccountsPage() {
   const router = useRouter();
   const { user, rehydrated } = useAuthStore();
-  
-  const { 
-    accounts, 
-    loading, 
-    fetchAccounts, 
-    addAccount, 
-    updateAccount, 
-    deleteAccount 
-  } = usePaymentAccountStore();
+  const { accounts, loading, fetchAccounts, addAccount, updateAccount, deleteAccount } = usePaymentAccountStore();
 
-  const [form, setForm] = useState({
-    userName: "",
-    accountId: "",
-    type: "",
-    city: "",
-  });
+  const [form, setForm] = useState({ userName: "", accountId: "", type: "", city: "" });
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [localError, setLocalError] = useState("");
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     if (!rehydrated) return;
@@ -51,35 +44,20 @@ export default function PaymentAccountsPage() {
     setForm({ userName: "", accountId: "", type: "", city: "" });
     setEditingId(null);
     setLocalError("");
+    setShowForm(false);
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Just in case, though button type is button by default if not specified
     if (!form.userName || !form.accountId || !form.type || !form.city) {
-      return setLocalError("All fields are required");
+      return setLocalError("Please fill in all settlement details.");
     }
 
-    let result;
-    if (editingId) {
-      result = await updateAccount({ id: editingId, ...form });
-    } else {
-      result = await addAccount(form);
-    } // addAccount returns account obj or null. Adapter needed?
-      // Store `addAccount` returns `data.account` (truthy) or `null`.
-      // Store `updateAccount` returns `{ success: true }`.
-      // I should standardize or handle both.
-      
-      // Let's check store: 
-      // addAccount: returns object or null.
-      // updateAccount: returns { success: true/false }
+    let result = editingId 
+      ? await updateAccount({ id: editingId, ...form }) 
+      : await addAccount(form);
 
-    if (editingId) {
-        if (result && result.success) resetForm();
-        else setLocalError(result?.message || "Failed to update");
-    } else {
-        if (result) resetForm(); // addAccount returns the object on success
-        else setLocalError("Failed to create account");
-    }
+    if (result) resetForm();
+    else setLocalError("Transaction failed. Please check your inputs.");
   };
 
   const startEdit = (acc) => {
@@ -90,12 +68,8 @@ export default function PaymentAccountsPage() {
       type: acc.type || "",
       city: acc.city || "",
     });
+    setShowForm(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this account?")) return;
-    await deleteAccount(id);
   };
 
   const filteredAccounts = accounts.filter(
@@ -104,216 +78,180 @@ export default function PaymentAccountsPage() {
       a.accountId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (!rehydrated) return null;
+
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="font-sans max-w-[1400px] mx-auto pb-20 space-y-10 animate-in fade-in duration-500">
+      
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Payment Accounts</h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Manage your Bakong and bank accounts for receiving payments.
-          </p>
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Settlements</h1>
+          <p className="text-slate-500 font-medium mt-2">Manage your Bakong and bank accounts for receiving customer payments.</p>
         </div>
+        <button 
+          onClick={() => { setShowForm(!showForm); if(showForm) resetForm(); }}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-lg ${
+            showForm ? 'bg-slate-100 text-slate-600' : 'bg-indigo-600 text-white shadow-indigo-100 hover:bg-indigo-700'
+          }`}
+        >
+          {showForm ? <X size={18} /> : <Plus size={18} />}
+          {showForm ? 'Cancel' : 'Add Account'}
+        </button>
       </div>
 
-      {/* 1. CREATE / EDIT FORM */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden transition-all">
-        <div className="px-8 py-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-            <CreditCard size={18} className="text-indigo-600" />
-            {editingId ? "Edit Account" : "Add New Account"}
-          </h2>
-          {editingId && (
-            <button
-              onClick={resetForm}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X size={20} />
-            </button>
+      {/* FORM SECTION (COLLAPSIBLE) */}
+      {showForm && (
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-in slide-in-from-top-4 duration-300">
+          <div className="p-8 lg:p-10 space-y-8">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-600 shadow-sm">
+                <CreditCard size={20} />
+              </div>
+              <h2 className="text-lg font-black text-slate-800 uppercase tracking-widest">
+                {editingId ? "Modify Account" : "Register Settlement Account"}
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Input label="Account Name" icon={UserIcon} placeholder="e.g. Sokha Electronics" value={form.userName} onChange={(v) => setForm({...form, userName: v})} />
+              <Input label="Bakong ID / Number" icon={ShieldCheck} placeholder="myshop@aba" value={form.accountId} onChange={(v) => setForm({...form, accountId: v})} />
+              
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Account Type</label>
+                <div className="relative">
+                   <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                   <select
+                    value={form.type}
+                    onChange={(e) => setForm({ ...form, type: e.target.value })}
+                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  >
+                    <option value="">Select Platform</option>
+                    <option value="Bakong">Bakong (KHQR)</option>
+                    <option value="Bank">Direct Bank Transfer</option>
+                  </select>
+                </div>
+              </div>
+
+              <Input label="City/Branch" icon={Globe} placeholder="Phnom Penh" value={form.city} onChange={(v) => setForm({...form, city: v})} />
+            </div>
+
+            <div className="flex items-center justify-between pt-8 border-t border-slate-50 mt-4">
+              <p className="text-rose-500 text-xs font-bold">
+                {localError && <span className="flex items-center gap-2"><AlertCircle size={14}/> {localError}</span>}
+              </p>
+              <div className="flex gap-4">
+                <button 
+                  onClick={handleSubmit} 
+                  disabled={loading}
+                  className="px-10 py-4 bg-slate-900 text-white font-bold rounded-2xl text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl disabled:bg-slate-200"
+                >
+                  {loading ? <Loader2 className="animate-spin mx-auto" size={18} /> : (editingId ? "Update Account" : "Save Settlement")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FILTER & LISTING */}
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search by ID or name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-all"
+            />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-8 py-5">Settlement Entity</th>
+                  <th className="px-8 py-5">Bakong / Account ID</th>
+                  <th className="px-8 py-5">Platform Type</th>
+                  <th className="px-8 py-5">Location</th>
+                  {user?.role === "admin" && <th className="px-8 py-5">Merchant Store</th>}
+                  <th className="px-8 py-5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredAccounts.map((acc) => (
+                  <tr key={acc._id} className="group hover:bg-slate-50/30 transition-colors">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xs border border-indigo-100">
+                          {acc.userName.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-slate-900">{acc.userName}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Settlement Primary</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 text-sm font-bold text-slate-600">{acc.accountId}</td>
+                    <td className="px-8 py-6">
+                      <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                        acc.type === 'Bakong' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'
+                      }`}>
+                        {acc.type}
+                      </span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <p className="text-xs font-bold text-slate-500">{acc.city}</p>
+                    </td>
+                    {user?.role === "admin" && (
+                      <td className="px-8 py-6">
+                        <p className="text-xs font-bold text-indigo-600">{acc.owner?.name || "System"}</p>
+                        <p className="text-[10px] text-slate-400">{acc.owner?.email}</p>
+                      </td>
+                    )}
+                    <td className="px-8 py-6 text-right">
+                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => startEdit(acc)} className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
+                          <Pencil size={18} />
+                        </button>
+                        <button onClick={() => deleteAccount(acc._id)} className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {filteredAccounts.length === 0 && (
+            <div className="py-20 text-center text-slate-400 font-medium italic">
+              No financial accounts linked yet.
+            </div>
           )}
         </div>
-
-        <div className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            {/* User Name */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 ml-1">Account Name</label>
-              <input
-                type="text"
-                placeholder="e.g. My Shop KHQR"
-                value={form.userName}
-                onChange={(e) => setForm({ ...form, userName: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all text-sm"
-              />
-            </div>
-
-            {/* Account ID */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 ml-1">Bakong ID</label>
-              <input
-                type="text"
-                placeholder="e.g. myshop@aca"
-                value={form.accountId}
-                onChange={(e) => setForm({ ...form, accountId: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all text-sm"
-              />
-            </div>
-
-            {/* Type */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 ml-1">Type</label>
-              <select
-                value={form.type}
-                onChange={(e) => setForm({ ...form, type: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all text-sm"
-              >
-                <option value="">Select Type</option>
-                <option value="Bakong">Bakong</option>
-              </select>
-            </div>
-
-            {/* City */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 ml-1">City</label>
-              <input
-                type="text"
-                placeholder="e.g. Phnom Penh"
-                value={form.city}
-                onChange={(e) => setForm({ ...form, city: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Error + Actions */}
-          <div className="flex items-center justify-between pt-6 mt-6 border-t border-gray-50">
-            <div className="flex items-center gap-2">
-              {localError && (
-                <span className="text-red-500 text-xs font-medium flex items-center gap-1">
-                  <AlertCircle size={14} /> {localError}
-                </span>
-              )}
-            </div>
-            <div className="flex gap-3">
-              {editingId && (
-                <button
-                  onClick={resetForm}
-                  className="px-6 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-all"
-                >
-                  Cancel
-                </button>
-              )}
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 flex items-center gap-2 transition-all text-sm"
-              >
-                {loading && <Loader2 size={16} className="animate-spin" />}
-                {editingId ? "Update Account" : "Save Account"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. SEARCH BAR */}
-      <div className="relative w-full md:w-96 group">
-        <Search
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors"
-          size={18}
-        />
-        <input
-          type="text"
-          placeholder="Filter accounts..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all text-sm"
-        />
-      </div>
-
-      {/* 3. ACCOUNTS TABLE */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50/50 border-b border-gray-100">
-              <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                Account Name
-              </th>
-              <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                Bakong ID
-              </th>
-              <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                Type
-              </th>
-              <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                City
-              </th>
-                <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">
-                Actions
-              </th>
-              {user?.role === "admin" && (
-                <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  Owner
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {filteredAccounts.map((acc) => (
-              <tr
-                key={acc._id}
-                className="hover:bg-indigo-50/5 transition-colors group"
-              >
-                <td className="px-8 py-4 font-bold text-gray-800">{acc.userName}</td>
-                <td className="px-8 py-4 text-gray-600">{acc.accountId}</td>
-                <td className="px-8 py-4">
-                    <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold">
-                        {acc.type}
-                    </span>
-                </td>
-                <td className="px-8 py-4 text-gray-600">{acc.city}</td>
-                <td className="px-8 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => startEdit(acc)}
-                      className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                    >
-                      <Pencil size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(acc._id)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
-                {user?.role === "admin" && (
-                  <td className="px-8 py-4 border-l border-gray-50 bg-gray-50/30">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-gray-700">
-                        {acc.owner?.name || (typeof acc.owner === 'string' ? "ID: " + acc.owner.slice(-6) : "System")}
-                      </span>
-                      {acc.owner?.email && (
-                        <span className="text-[10px] text-gray-400 font-medium">{acc.owner.email}</span>
-                      )}
-                    </div>
-                  </td>
-                )}
-                </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {filteredAccounts.length === 0 && (
-            <div className="py-20 text-center">
-            <p className="text-gray-400 text-sm italic">
-                No payment accounts found.
-            </p>
-            </div>
-        )}
       </div>
     </div>
   );
 }
+
+// Helper: Custom Input with Icon
+const Input = ({ label, value, onChange, placeholder, icon: Icon }) => (
+  <div className="space-y-2">
+    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+    <div className="relative">
+      {Icon && <Icon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />}
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+      />
+    </div>
+  </div>
+);
