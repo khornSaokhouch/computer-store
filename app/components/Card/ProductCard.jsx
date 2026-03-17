@@ -29,7 +29,7 @@ export default function ProductCard({ product }) {
   return (
     <div className="group bg-white rounded-[2rem] border border-gray-100 hover:border-indigo-100 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 flex flex-col relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 zoom-in-95">
       {/* Visual Header */}
-      <div className="relative aspect-square bg-gray-50 overflow-hidden border-b border-gray-50">
+      <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden border-b border-gray-50">
         <Link href={`/products/${product._id}`} className="block w-full h-full">
           {product.images?.[0] ? (
             <Image
@@ -75,48 +75,31 @@ export default function ProductCard({ product }) {
         </button>
       </div>
 
-      <div className="p-5 flex flex-col flex-1">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600">{brandName}</span>
+      <div className="p-3 flex flex-col flex-1">
+        <div className="flex justify-between items-center mb-1.5">
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-600">{brandName}</span>
           {!isOutOfStock && (
-            <div className="flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+            <div className="flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
               <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />
               <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">In Stock</span>
             </div>
           )}
         </div>
 
-        <Link href={`/products/${product._id}`} className="mb-4">
-          <div className="flex items-center gap-1.5 mb-2">
-            <div className="flex gap-0.5 text-amber-400">
-              <Star size={10} fill={product.rating > 0 ? "currentColor" : "none"} strokeWidth={2} />
-            </div>
-            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">
-              {product.rating ? product.rating.toFixed(1) : "0.0"} ({product.numReviews || 0})
-            </span>
-          </div>
-          <h3 className="font-black text-gray-900 text-sm leading-tight line-clamp-2 min-h-[2.5rem] group-hover:text-indigo-600 transition-colors tracking-tight">
+        <Link href={`/products/${product._id}`} className="mb-2">
+          <h3 className="font-black text-gray-900 text-xs leading-tight line-clamp-2 min-h-[2rem] group-hover:text-indigo-600 transition-colors tracking-tight">
             {product.name}
           </h3>
-          {categoryName && (
-             <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-               {categoryName}
-             </p>
-          )}
         </Link>
 
-        <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1 text-center">Price</span>
-            <span className="text-sm font-black text-gray-900 tracking-tight">${product.price?.toLocaleString()}</span>
-          </div>
-          
+        <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between">
+          <span className="text-sm font-black text-gray-900 tracking-tight">${product.price?.toLocaleString()}</span>
           <button
             disabled={isOutOfStock}
             onClick={() => addToCart(product, 1)}
-            className="w-10 h-10 bg-gray-900 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-200 transition-all duration-300 disabled:opacity-20 disabled:grayscale"
+            className="w-8 h-8 bg-gray-900 text-white rounded-xl flex items-center justify-center hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-200 transition-all duration-300 disabled:opacity-20 disabled:grayscale"
           >
-            <ShoppingCart size={16} />
+            <ShoppingCart size={14} />
           </button>
         </div>
       </div>
